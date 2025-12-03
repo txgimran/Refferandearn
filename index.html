@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Referral + Withdraw (Improved UI)</title>
+<style>
+  body{font-family:Arial;background:#eef2f7;margin:0;padding:0}
+  .container{max-width:520px;margin:20px auto;background:#fff;padding:20px;border-radius:20px;box-shadow:0 4px 25px rgba(0,0,0,0.1)}
+  h2,h3{margin:0 0 15px;color:#111}
+  input,button{padding:12px;border-radius:10px;border:1px solid #ccc;width:100%;margin-top:8px;font-size:15px}
+  button{background:#0ea5a4;color:#fff;border:none;font-weight:bold;cursor:pointer}
+  button:active{opacity:0.7}
+  .refbox{background:#f8fafc;padding:12px;border-radius:12px;word-break:break-all;margin-top:10px;border:1px dashed #999}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="container">
+<h2>Referral + Withdraw Panel</h2>
+<div id="panel"></div>
+</div>
+
+<script>
+const QS = k => new URLSearchParams(location.search).get(k);
+const bot  = QS('bot');
+const uid  = QS('user');
+const admin= QS('admin');
+const botRefLink = QS('userrefferlinkforshow');
+
+let U = JSON.parse(localStorage.getItem('USERS_v2') || '{}');
+let B = JSON.parse(localStorage.getItem('BOTS_v2') || '{}');
+
+if(!U[uid]) U[uid] = {bal:0,ref:null,wdCount:0,banned:false,history:[]};
+if(!B[bot]) B[bot] = {adminId:admin,paid:0};
+
+if(QS('newuser')==='1' && QS('ref')){
+  if(!U[uid].ref){
+    let r = QS('ref');
+    if(!U[r]) U[r]={bal:0,ref:null,wdCount:0,banned:false,history:[]};
+    U[r].bal += 3;
+    U[r].history.push({type:'ref',amt:3,date:Date()});
+    U[uid].ref = r;
+  }
+}
+
+function save(){localStorage.setItem('USERS_v2',JSON.stringify(U));localStorage.setItem('BOTS_v2',JSON.stringify(B));}
+
+function showPanel(){
+  if(U[uid].banned){document.getElementById('panel').innerHTML='<p style="color:red">You are banned.</p>';return;}
+
+  let myRef = location.origin+location.pathname+`?newuser=1&user=${uid}&ref=${uid}`;
+
+  document.getElementById('panel').innerHTML = `
+    <h3>Your balance: ₹${U[uid].bal}</h3>
+    <p>Withdraws today: ${U[uid].wdCount} / 1</p>
+
+    <button onclick="openWithdraw()">Withdraw</button>
+
+    <h3>Your Referral Link</h3>
+    <div class='refbox'>${myRef}</div>
+
+    <h3>Bot Referral Link (shown from URL)</h3>
+    <div class='refbox'>${botRefLink || 'Not provided'}</div>
+  `;
+}
+
+function openWithdraw(){
+  document.getElementById('panel').innerHTML = `
+    <h3>Withdraw Request</h3>
+    <p>Enter UPI ID</p>
+    <input id='upi' placeholder='example@upi'>
+
+    <p>Enter amount (min/max ₹10)</p>
+    <input id='amt' value='10'>
+
+    <button onclick='processWithdraw()'>Submit Request</button>
+    <button style='background:#888' onclick='showPanel()'>Back</button>
+  `;
+}
+
+function processWithdraw(){
+  let upi = document.getElementById('upi').value.trim();
+  let amt = Number(document.getElementById('amt').value);
+
+  if(!upi) return alert('Enter valid UPI');
+  if(amt!==10) return alert('Only ₹10 withdraw allowed');
+  if(U[uid].bal < 10) return alert('Insufficient balance');
+  if(U[uid].wdCount >= 1) return alert('Daily limit reached');
+
+  U[uid].bal -= 10;
+  U[uid].wdCount += 1;
+  U[uid].history.push({type:'wd',amt:10,upi,date:Date()});
+  B[bot].paid += 10;
+  save();
+
+  alert(`Withdraw request sent to admin: ${admin}
+UPI: ${upi}
+Amount: ₹10`);
+  showPanel();
+}
+
+showPanel();
+</script>
+</body>
+</html>

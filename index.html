@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Referral + Withdraw Demo</title>
+  <style>
+    :root{font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+    body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f3f4f6;margin:0}
+    .card{width:380px;background:white;border-radius:12px;box-shadow:0 6px 24px rgba(15,23,42,0.08);padding:20px}
+    h1{font-size:20px;margin:0 0 8px}
+    p{margin:0 0 12px;color:#374151}
+    .row{display:flex;gap:8px;align-items:center}
+    .balance{font-size:36px;font-weight:700;color:#0f172a}
+    .muted{color:#6b7280;font-size:13px}
+    button{cursor:pointer;border:0;padding:10px 12px;border-radius:8px;background:#0ea5a4;color:white}
+    .ghost{background:#eef2ff;color:#4338ca}
+    input[type="number"]{width:100%;padding:10px;border-radius:8px;border:1px solid #e5e7eb}
+    .small{font-size:13px}
+    .inline{display:inline-flex;gap:8px}
+    .copy-btn{padding:8px 10px;border-radius:8px;border:1px solid #e5e7eb;background:#fff}
+    .note{font-size:12px;color:#6b7280;margin-top:8px}
+    .success{color:green}
+    .error{color:#b91c1c}
+    .flex-between{display:flex;justify-content:space-between;align-items:center}
+    .list{margin-top:12px;border-top:1px dashed #e6eef5;padding-top:12px}
+  </style>
+</head>
+<body>
+  <div class="card" role="main">
+    <h1>Referral & Withdraw Panel</h1>
+    <p class="muted">Open the page — your balance and controls are shown below. (Demo uses localStorage)</p>
+
+    <div class="row" style="justify-content:space-between;margin-top:10px">
+      <div>
+        <div class="small muted">Your balance</div>
+        <div class="balance" id="balance">₹0</div>
+      </div>
+      <div style="text-align:right">
+        <div class="small muted">Withdraws today</div>
+        <div id="todayCount">0 / 1</div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px">
+      <label class="small muted">Withdraw amount (min ₹10 — max ₹10)</label>
+      <input type="number" id="withdrawAmount" value="10" min="10" max="10" />
+      <div class="note">Note: Daily withdraw limited to <strong>1</strong> withdraw per day. Minimum and maximum are both ₹10 (so only ₹10 allowed).</div>
+      <div style="margin-top:8px" class="row">
+        <button id="withdrawBtn">Withdraw</button>
+        <button id="historyBtn" class="ghost">View History</button>
+      </div>
+      <div id="withdrawMsg" class="note" aria-live="polite"></div>
+    </div>
+
+    <div class="list">
+      <div class="flex-between"><div><strong>Referral link</strong><div class="muted small">Share to get ₹3 per successful referral</div></div>
+      </div>
+      <div style="margin-top:8px" class="row">
+        <input id="refLink" type="text" readonly value="" style="flex:1;padding:8px;border-radius:8px;border:1px solid #e5e7eb"/>
+        <button class="copy-btn" id="copyRef">Copy</button>
+      </div>
+      <div style="margin-top:8px;display:flex;gap:8px">
+        <button id="simulateRef" class="ghost">Simulate 1 referral (₹3)</button>
+        <button id="resetBtn" class="ghost">Reset Demo</button>
+      </div>
+      <div style="margin-top:8px" class="small muted">Referrals: <span id="refCount">0</span> — Total earned from referrals: ₹<span id="refEarned">0</span></div>
+    </div>
+
+    <div id="historyPanel" style="display:none;margin-top:12px">
+      <h3 style="margin:8px 0">Withdraw History</h3>
+      <div id="historyList" class="small muted">No history yet.</div>
+    </div>
+
+    <div style="margin-top:14px" class="muted small">English + Hindi notes below</div>
+    <div class="note" style="margin-top:8px">English: This is a single-file demo. To make it live for real users you'd need a backend (to store balances, validate referrals, and secure withdrawals).<br>Hindi: यह एक डेमो है — असली सिस्टम के लिए सर्वर-बैकएंड चाहिए (balance, referrals और withdrawals को सुरक्षित करने के लिए)।</div>
+  </div>
+
+  <script>
+    // Keys in localStorage
+    const KEY_BAL = 'demo_balance_v1';
+    const KEY_REF = 'demo_referrals_v1';
+    const KEY_HISTORY = 'demo_withdraw_history_v1';
+    const KEY_LAST_WITHDRAW_DATE = 'demo_last_withdraw_date_v1';
+    const KEY_WITHDRAWS_TODAY = 'demo_withdraws_today_v1';
+
+    // Config (business rules)
+    const PER_REF_EARN = 3; // ₹3 per referral
+    const DAILY_WITHDRAW_LIMIT = 1; // 1 withdraw per day
+    const MIN_WITHDRAW = 10;
+    const MAX_WITHDRAW = 10; // as requested
+
+    // Elements
+    const balanceEl = document.getElementById('balance');
+    const withdrawBtn = document.getElementById('withdrawBtn');
+    const withdrawAmount = document.getElementById('withdrawAmount');
+    const withdrawMsg = document.getElementById('withdrawMsg');
+    const refLinkInput = document.getElementById('refLink');
+    const copyRef = document.getElementById('copyRef');
+    const simulateRef = document.getElementById('simulateRef');
+    const resetBtn = document.getElementById('resetBtn');
+    const refCountEl = document.getElementById('refCount');
+    const refEarnedEl = document.getElementById('refEarned');
+    const todayCountEl = document.getElementById('todayCount');
+    const historyBtn = document.getElementById('historyBtn');
+    const historyPanel = document.getElementById('historyPanel');
+    const historyList = document.getElementById('historyList');
+
+    function nowDateStr(){
+      const d = new Date();
+      return d.getFullYear()+"-"+(String(d.getMonth()+1).padStart(2,'0'))+"-"+String(d.getDate()).padStart(2,'0');
+    }
+
+    function loadState(){
+      const bal = parseFloat(localStorage.getItem(KEY_BAL)) || 0;
+      const refs = parseInt(localStorage.getItem(KEY_REF)) || 0;
+      const history = JSON.parse(localStorage.getItem(KEY_HISTORY) || '[]');
+      const lastDate = localStorage.getItem(KEY_LAST_WITHDRAW_DATE) || null;
+      let withdrawsToday = parseInt(localStorage.getItem(KEY_WITHDRAWS_TODAY) || '0');
+
+      // reset withdrawsToday if day changed
+      if(lastDate !== nowDateStr()){
+        withdrawsToday = 0;
+        localStorage.setItem(KEY_WITHDRAWS_TODAY, '0');
+        localStorage.setItem(KEY_LAST_WITHDRAW_DATE, nowDateStr());
+      }
+
+      updateUI(bal, refs, history, withdrawsToday);
+    }
+
+    function updateUI(bal, refs, history, withdrawsToday){
+      balanceEl.textContent = '₹' + (Math.round(bal*100)/100).toFixed(2).replace('.00','');
+      refCountEl.textContent = refs;
+      refEarnedEl.textContent = (refs * PER_REF_EARN).toFixed(2).replace('.00','');
+      todayCountEl.textContent = (withdrawsToday || 0) + ' / ' + DAILY_WITHDRAW_LIMIT;
+
+      // referral link (demo): embed a fake user id stored in localStorage
+      let uid = localStorage.getItem('demo_user_id_v1');
+      if(!uid){ uid = 'user' + Math.floor(Math.random()*90000+10000); localStorage.setItem('demo_user_id_v1', uid); }
+      const link = location.origin + location.pathname + '?ref=' + uid;
+      refLinkInput.value = link;
+
+      // history
+      if(history && history.length){
+        historyList.innerHTML = history.map(h => `<div>₹${h.amount} — ${h.date} ${h.note?('- '+h.note):''}</div>`).join('');
+      } else {
+        historyList.textContent = 'No history yet.';
+      }
+    }
+
+    function saveBalance(newBal){
+      localStorage.setItem(KEY_BAL, String(newBal));
+    }
+
+    withdrawBtn.addEventListener('click', ()=>{
+      withdrawMsg.textContent = '';
+      withdrawMsg.className = 'note';
+
+      const amt = Number(withdrawAmount.value);
+      if(isNaN(amt)){
+        withdrawMsg.textContent = 'Enter a valid amount.'; withdrawMsg.classList.add('error'); return;
+      }
+      if(amt < MIN_WITHDRAW){ withdrawMsg.textContent = `Minimum withdraw is ₹${MIN_WITHDRAW}.`; withdrawMsg.classList.add('error'); return; }
+      if(amt > MAX_WITHDRAW){ withdrawMsg.textContent = `Maximum withdraw is ₹${MAX_WITHDRAW}.`; withdrawMsg.classList.add('error'); return; }
+
+      // enforce daily limit
+      let withdrawsToday = parseInt(localStorage.getItem(KEY_WITHDRAWS_TODAY) || '0');
+      const storedDate = localStorage.getItem(KEY_LAST_WITHDRAW_DATE) || nowDateStr();
+      if(storedDate !== nowDateStr()){
+        withdrawsToday = 0;
+      }
+      if(withdrawsToday >= DAILY_WITHDRAW_LIMIT){ withdrawMsg.textContent = 'Daily withdraw limit reached.'; withdrawMsg.classList.add('error'); return; }
+
+      // check balance
+      const bal = parseFloat(localStorage.getItem(KEY_BAL)) || 0;
+      if(bal < amt){ withdrawMsg.textContent = 'Insufficient balance.'; withdrawMsg.classList.add('error'); return; }
+
+      // process withdraw (demo): subtract and add history
+      const newBal = Math.round((bal - amt)*100)/100;
+      saveBalance(newBal);
+
+      // history
+      const history = JSON.parse(localStorage.getItem(KEY_HISTORY) || '[]');
+      history.unshift({amount: amt, date: new Date().toLocaleString(), note: 'Demo withdraw'});
+      localStorage.setItem(KEY_HISTORY, JSON.stringify(history));
+
+      // update withdraws count and date
+      withdrawsToday = (withdrawsToday || 0) + 1;
+      localStorage.setItem(KEY_WITHDRAWS_TODAY, String(withdrawsToday));
+      localStorage.setItem(KEY_LAST_WITHDRAW_DATE, nowDateStr());
+
+      withdrawMsg.textContent = `Withdraw successful: ₹${amt}. New balance ₹${newBal}.`;
+      withdrawMsg.classList.add('success');
+      loadState();
+    });
+
+    // copy referral link
+    copyRef.addEventListener('click', ()=>{
+      refLinkInput.select();
+      refLinkInput.setSelectionRange(0, 99999);
+      navigator.clipboard.writeText(refLinkInput.value).then(()=>{
+        copyRef.textContent = 'Copied';
+        setTimeout(()=>copyRef.textContent = 'Copy', 1400);
+      }).catch(()=>{
+        copyRef.textContent = 'Copy failed';
+        setTimeout(()=>copyRef.textContent = 'Copy', 1400);
+      });
+    });
+
+    // simulate a referral (for demo only) — gives PER_REF_EARN and increments referral count
+    simulateRef.addEventListener('click', ()=>{
+      const refs = parseInt(localStorage.getItem(KEY_REF) || '0') + 1;
+      localStorage.setItem(KEY_REF, String(refs));
+
+      const bal = parseFloat(localStorage.getItem(KEY_BAL) || '0') + PER_REF_EARN;
+      saveBalance(bal);
+
+      // save small history note
+      const history = JSON.parse(localStorage.getItem(KEY_HISTORY) || '[]');
+      history.unshift({amount: 0, date: new Date().toLocaleString(), note: `+₹${PER_REF_EARN} from referral`});
+      localStorage.setItem(KEY_HISTORY, JSON.stringify(history));
+
+      withdrawMsg.textContent = `Referral credited: ₹${PER_REF_EARN}.`;
+      withdrawMsg.classList.add('success');
+      loadState();
+    });
+
+    resetBtn.addEventListener('click', ()=>{
+      if(!confirm('Reset demo data? This will wipe stored balance and history.')) return;
+      localStorage.removeItem(KEY_BAL);
+      localStorage.removeItem(KEY_REF);
+      localStorage.removeItem(KEY_HISTORY);
+      localStorage.removeItem(KEY_WITHDRAWS_TODAY);
+      localStorage.removeItem(KEY_LAST_WITHDRAW_DATE);
+      localStorage.removeItem('demo_user_id_v1');
+      loadState();
+    });
+
+    historyBtn.addEventListener('click', ()=>{
+      historyPanel.style.display = historyPanel.style.display === 'none' ? 'block' : 'none';
+    });
+
+    // On initial load: ensure keys exist
+    (function init(){
+      if(localStorage.getItem(KEY_BAL) === null) localStorage.setItem(KEY_BAL, '0');
+      if(localStorage.getItem(KEY_REF) === null) localStorage.setItem(KEY_REF, '0');
+      if(localStorage.getItem(KEY_HISTORY) === null) localStorage.setItem(KEY_HISTORY, JSON.stringify([]));
+      if(localStorage.getItem(KEY_LAST_WITHDRAW_DATE) === null) localStorage.setItem(KEY_LAST_WITHDRAW_DATE, nowDateStr());
+      if(localStorage.getItem(KEY_WITHDRAWS_TODAY) === null) localStorage.setItem(KEY_WITHDRAWS_TODAY, '0');
+      loadState();
+
+      // If page opened with ?ref=someid, we can simulate awarding the referrer in a real app.
+      // This demo does not automatically credit the owner when a visitor opens with a ref param (would require server-side logic).
+      // For convenience, show query param in console.
+      const urlParams = new URLSearchParams(location.search);
+      if(urlParams.has('ref')) console.log('Opened with ref:', urlParams.get('ref'));
+    })();
+  </script>
+</body>
+</html>

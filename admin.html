@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡ Admin Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-container {
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .admin-container {
+            max-width: 800px;
+            width: 100%;
+            display: none;
+        }
+
+        .login-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .login-box h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: white;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .login-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .login-input:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transition: all 0.3s;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .admin-header {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .admin-header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            color: white;
+        }
+
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .admin-stat-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .admin-stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: white;
+        }
+
+        .admin-stat-label {
+            font-size: 12px;
+            opacity: 0.8;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .admin-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .admin-action-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+
+        .admin-action-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+        }
+
+        .action-icon {
+            font-size: 32px;
+        }
+
+        .admin-form {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 20px;
+            margin: 20px 0;
+            color: #333;
+        }
+
+        .admin-form h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #495057;
+            font-weight: 500;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .users-table {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .table-header {
+            background: #f8f9fa;
+            padding: 20px;
+            font-weight: 600;
+            color: #495057;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+            gap: 15px;
+        }
+
+        .table-row {
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .table-row:last-child {
+            border-bottom: none;
+        }
+
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-banned {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .user-action-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 0 5px;
+        }
+
+        .user-action-btn.ban {
+            background: #dc3545;
+            color: white;
+        }
+
+        .user-action-btn.unban {
+            background: #28a745;
+            color: white;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            z-index: 1001;
+            animation: slideInRight 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .notification.success {
+            background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
+        }
+
+        .notification.error {
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+        }
+
+        .logout-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .admin-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .table-header, .table-row {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .admin-container {
+                padding: 10px;
+            }
+            
+            .admin-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-container" id="loginScreen">
+        <div class="login-box">
+            <h1>🔐 Admin Login</h1>
+            <p style="margin-bottom: 30px; color: rgba(255, 255, 255, 0.7);">
+                Enter password to access admin panel
+            </p>
+            <input type="password" id="adminPassword" class="login-input" placeholder="Enter Admin Password">
+            <button class="login-btn" onclick="checkPassword()">Login</button>
+            <p style="margin-top: 20px; font-size: 12px; color: rgba(255, 255, 255, 0.5);">
+                Default password: admin123 (Change in code)
+            </p>
+        </div>
+    </div>
+
+    <!-- Admin Panel (Hidden until login) -->
+    <div class="admin-container" id="adminPanel">
+        <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+        
+        <div class="admin-header">
+            <h1>⚡ Admin Control Panel</h1>
+            <p>Secure System Management</p>
+            
+            <div class="admin-stats">
+                <div class="admin-stat-box">
+                    <div class="admin-stat-value" id="totalUsers">0</div>
+                    <div class="admin-stat-label">Total Users</div>
+                </div>
+                <div class="admin-stat-box">
+                    <div class="admin-stat-value" id="totalBalance">₹0</div>
+                    <div class="admin-stat-label">System Balance</div>
+                </div>
+                <div class="admin-stat-box">
+                    <div class="admin-stat-value" id="totalWithdrawn">₹0</div>
+                    <div class="admin-stat-label">Total Withdrawn</div>
+                </div>
+                <div class="admin-stat-box">
+                    <div class="admin-stat-value" id="activeBanned">0/0</div>
+                    <div class="admin-stat-label">Active/Banned</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="admin-actions">
+            <div class="admin-action-btn" onclick="openModal('addBalanceModal')">
+                <div class="action-icon">💰</div>
+                <div>Add Balance</div>
+            </div>
+            
+            <div class="admin-action-btn" onclick="openModal('settingsModal')">
+                <div class="action-icon">⚙️</div>
+                <div>System Settings</div>
+            </div>
+            
+            <div class="admin-action-btn" onclick="resetDailyLimits()">
+                <div class="action-icon">🔄</div>
+                <div>Reset Daily Limits</div>
+            </div>
+            
+            <div class="admin-action-btn" onclick="generateAPILinks()">
+                <div class="action-icon">🔗</div>
+                <div>API Links</div>
+            </div>
+        </div>
+        
+        <div class="admin-form">
+            <h3>📊 Users Management</h3>
+            <div class="users-table" id="usersTable">
+                <div class="table-header">
+                    <div>User ID</div>
+                    <div>Balance</div>
+                    <div>Withdrawn</div>
+                    <div>Status</div>
+                    <div>Actions</div>
+                </div>
+                <!-- Users will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="addBalanceModal">
+        <div class="modal-content">
+            <h3>💰 Add Balance</h3>
+            <div class="form-group">
+                <input type="text" id="adminUserId" placeholder="User ID">
+                <input type="number" id="adminAmount" placeholder="Amount (₹)">
+                <button class="login-btn" onclick="adminAddBalance()">Add Balance</button>
+                <button class="login-btn" onclick="closeModal('addBalanceModal')" style="background: #6c757d; margin-top: 10px;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <h3>⚙️ System Settings</h3>
+            <div class="form-group">
+                <input type="number" id="perRefAmount" placeholder="Per Referral Bonus (₹)">
+                <input type="number" id="minWithdrawAmount" placeholder="Min Withdraw (₹)">
+                <input type="number" id="maxWithdrawAmount" placeholder="Max Withdraw (₹)">
+                <input type="number" id="dailyLimitAmount" placeholder="Daily Withdraw Limit">
+                <button class="login-btn" onclick="updateSystemSettings()">Save Settings</button>
+                <button class="login-btn" onclick="closeModal('settingsModal')" style="background: #6c757d; margin-top: 10px;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="apiLinksModal">
+        <div class="modal-content">
+            <h3>🔗 API Links</h3>
+            <div class="form-group">
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                    <strong>📱 User Open API:</strong><br>
+                    <small id="openAPILink">Loading...</small>
+                </div>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                    <strong>➕ Add Referral API:</strong><br>
+                    <small id="addRefAPILink">Loading...</small>
+                </div>
+                <button class="login-btn" onclick="closeModal('apiLinksModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =============== PASSWORD PROTECTED ADMIN ===============
+        const STORAGE_KEY = 'ref_earn_system_v2';
+        const ADMIN_PASSWORD = 'admin123'; // CHANGE THIS IN PRODUCTION!
+        
+        // Check if already logged in
+        function checkLogin() {
+            const isLoggedIn = localStorage.getItem('admin_logged_in') === 'true';
+            if (isLoggedIn) {
+                showAdminPanel();
+            }
+        }
+        
+        // Check password
+        function checkPassword() {
+            const password = document.getElementById('adminPassword').value;
+            
+            if (password === ADMIN_PASSWORD) {
+                localStorage.setItem('admin_logged_in', 'true');
+                showAdminPanel();
+                showNotification('✅ Login successful!', 'success');
+            } else {
+                showNotification('❌ Incorrect password!', 'error');
+            }
+        }
+        
+        // Logout
+        function logout() {
+            localStorage.removeItem('admin_logged_in');
+            document.getElementById('loginScreen').style.display = 'block';
+            document.getElementById('adminPanel').style.display = 'none';
+        }
+        
+        // Show admin panel
+        function showAdminPanel() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            loadAdminData();
+        }
+        
+        // Get system config
+        function getSystemConfig() {
+            const storedConfig = localStorage.getItem(`${STORAGE_KEY}_config`);
+            return storedConfig ? JSON.parse(storedConfig) : null;
+        }
+        
+        // Get all user data
+        function getAllUserData() {
+            const storedData = localStorage.getItem(`${STORAGE_KEY}_data`);
+            return storedData ? JSON.parse(storedData) : { users: {}, referrals: {} };
+        }
+        
+        // Save user data
+        function saveUserData(data) {
+            localStorage.setItem(`${STORAGE_KEY}_data`, JSON.stringify(data));
+        }
+        
+        // Load admin data
+        function loadAdminData() {
+            const data = getAllUserData();
+            const users = data.users;
+            
+            // Calculate statistics
+            const totalUsers = Object.keys(users).length;
+            let totalBalance = 0;
+            let totalWithdrawn = 0;
+            let activeUsers = 0;
+            let bannedUsers = 0;
+            
+            Object.values(users).forEach(user => {
+                totalBalance += user.balance;
+                totalWithdrawn += user.totalWithdrawn;
+                if (user.banned) bannedUsers++;
+                else activeUsers++;
+            });
+            
+            // Update stats
+            document.getElementById('totalUsers').textContent = totalUsers;
+            document.getElementById('totalBalance').textContent = `₹${totalBalance}`;
+            document.getElementById('totalWithdrawn').textContent = `₹${totalWithdrawn}`;
+            document.getElementById('activeBanned').textContent = `${activeUsers}/${bannedUsers}`;
+            
+            // Load users table
+            let usersHTML = '';
+            Object.entries(users).forEach(([userId, user]) => {
+                usersHTML += `
+                    <div class="table-row">
+                        <div><strong>${userId}</strong></div>
+                        <div>₹${user.balance}</div>
+                        <div>₹${user.totalWithdrawn}</div>
+                        <div>
+                            <span class="status-badge ${user.banned ? 'status-banned' : 'status-active'}">
+                                ${user.banned ? '🚫 BANNED' : '✅ ACTIVE'}
+                            </span>
+                        </div>
+                        <div>
+                            ${user.banned ? 
+                                `<button class="user-action-btn unban" onclick="adminUnbanUser('${userId}')">UNBAN</button>` :
+                                `<button class="user-action-btn ban" onclick="adminBanUser('${userId}')">BAN</button>`
+                            }
+                        </div>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('usersTable').innerHTML = `
+                <div class="table-header">
+                    <div>User ID</div>
+                    <div>Balance</div>
+                    <div>Withdrawn</div>
+                    <div>Status</div>
+                    <div>Actions</div>
+                </div>
+                ${usersHTML}
+            `;
+            
+            // Load settings
+            const config = getSystemConfig();
+            if (config) {
+                document.getElementById('perRefAmount').value = config.perRef;
+                document.getElementById('minWithdrawAmount').value = config.minWd;
+                document.getElementById('maxWithdrawAmount').value = config.maxWd;
+                document.getElementById('dailyLimitAmount').value = config.dailyLimit;
+            }
+        }
+        
+        // Admin functions
+        function adminAddBalance() {
+            const userId = document.getElementById('adminUserId').value.trim();
+            const amount = parseInt(document.getElementById('adminAmount').value);
+            
+            if (!userId || !amount || amount <= 0) {
+                showNotification('Enter valid user ID and amount', 'error');
+                return;
+            }
+            
+            const data = getAllUserData();
+            
+            if (!data.users[userId]) {
+                data.users[userId] = {
+                    balance: 0,
+                    totalEarned: 0,
+                    totalWithdrawn: 0,
+                    wdToday: 0,
+                    refs: 0,
+                    refBy: null,
+                    banned: false,
+                    joinDate: new Date().toISOString()
+                };
+            }
+            
+            data.users[userId].balance += amount;
+            data.users[userId].totalEarned += amount;
+            
+            saveUserData(data);
+            
+            showNotification(`✅ Added ₹${amount} to user ${userId}`, 'success');
+            closeModal('addBalanceModal');
+            loadAdminData();
+        }
+        
+        function adminBanUser(userId) {
+            const data = getAllUserData();
+            
+            if (data.users[userId]) {
+                data.users[userId].banned = true;
+                saveUserData(data);
+                showNotification(`✅ Banned user ${userId}`, 'success');
+                loadAdminData();
+            } else {
+                showNotification('User not found', 'error');
+            }
+        }
+        
+        function adminUnbanUser(userId) {
+            const data = getAllUserData();
+            
+            if (data.users[userId]) {
+                data.users[userId].banned = false;
+                saveUserData(data);
+                showNotification(`✅ Unbanned user ${userId}`, 'success');
+                loadAdminData();
+            } else {
+                showNotification('User not found', 'error');
+            }
+        }
+        
+        function updateSystemSettings() {
+            const config = getSystemConfig();
+            if (!config) {
+                showNotification('No system configuration found', 'error');
+                return;
+            }
+            
+            const perRef = parseInt(document.getElementById('perRefAmount').value) || config.perRef;
+            const minWd = parseInt(document.getElementById('minWithdrawAmount').value) || config.minWd;
+            const maxWd = parseInt(document.getElementById('maxWithdrawAmount').value) || config.maxWd;
+            const dailyLimit = parseInt(document.getElementById('dailyLimitAmount').value) || config.dailyLimit;
+            
+            config.perRef = perRef;
+            config.minWd = minWd;
+            config.maxWd = maxWd;
+            config.dailyLimit = dailyLimit;
+            
+            localStorage.setItem(`${STORAGE_KEY}_config`, JSON.stringify(config));
+            
+            showNotification('✅ Settings updated!', 'success');
+            closeModal('settingsModal');
+        }
+        
+        function resetDailyLimits() {
+            const data = getAllUserData();
+            
+            Object.keys(data.users).forEach(userId => {
+                data.users[userId].wdToday = 0;
+            });
+            
+            saveUserData(data);
+            
+            showNotification('✅ Daily limits reset for all users', 'success');
+            loadAdminData();
+        }
+        
+        function generateAPILinks() {
+            const config = getSystemConfig();
+            if (!config) {
+                showNotification('Configure system first', 'error');
+                return;
+            }
+            
+            const baseUrl = window.location.origin + window.location.pathname.replace('admin.html', 'index.html');
+            
+            // Open API Link
+            const openAPILink = `${baseUrl}?api=open&uid={USER_ID}&token=${config.botToken}&adminid=${config.adminId}&tgbotrefferlink=${encodeURIComponent(config.userRefferLink)}`;
+            
+            // AddRef API Link
+            const addRefAPILink = `${baseUrl}?api=addref&uid={NEW_USER}&ref={REFERRER}&token=${config.botToken}&adminid=${config.adminId}`;
+            
+            document.getElementById('openAPILink').textContent = openAPILink;
+            document.getElementById('addRefAPILink').textContent = addRefAPILink;
+            openModal('apiLinksModal');
+        }
+        
+        // Show notification
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span> ${message}`;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+        
+        // Close modal
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+        
+        // Open modal
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+        
+        // Initialize
+        window.onload = function() {
+            checkLogin();
+        };
+    </script>
+</body>
+  </html>
